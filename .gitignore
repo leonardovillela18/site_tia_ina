@@ -1,2 +1,6 @@
 data/
+data-staging/
 *.log
+
+# Variantes WebP geradas por tools/generate-images.php
+img/*-[0-9]*.webp

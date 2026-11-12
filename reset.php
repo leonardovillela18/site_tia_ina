@@ -1,11 +1,7 @@
 <?php
 declare(strict_types=1);
-session_start();
-require __DIR__ . '/config.php';
-require __DIR__ . '/includes/db.php';
-require __DIR__ . '/includes/functions.php';
-
-migrate_and_seed();
+require __DIR__ . '/bootstrap.php';
+app_session_start();
 
 $token = trim($_GET['token'] ?? '');
 $error = '';
@@ -50,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $update->execute([password_hash($password, PASSWORD_DEFAULT), (int) $reset['user_id']]);
         $mark = db()->prepare('UPDATE password_resets SET used = 1 WHERE id = ?');
         $mark->execute([(int) $reset['id']]);
+        rate_limit_clear('login', client_ip());
         flash_set('success', 'Senha alterada com sucesso. Faça login com a nova senha.');
         redirect('login.php');
     }
@@ -59,13 +56,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
 <title>Nova senha | Tia Iná</title>
-<link rel="icon" href="img/logo.png"><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/admin.css">
+<link rel="icon" href="img/logo.png"><link rel="stylesheet" href="<?= e(asset('css/style.css')) ?>"><link rel="stylesheet" href="<?= e(asset('css/admin.css')) ?>">
 </head>
 <body class="login-page">
 <a class="back-link" href="index.php">← Voltar ao site</a>
 <main class="login-main">
-<a href="index.php" aria-label="Voltar ao início"><img class="login-logo" src="img/logo.png" alt="Produtos Artesanais Tia Iná" width="250" height="250"></a>
+<a href="index.php" aria-label="Voltar ao início"><?= render_picture('logo.png', 'Produtos Artesanais Tia Iná', ['class' => 'login-logo', 'widths' => [160, 320, 480], 'sizes' => '250px', 'loading' => 'eager']) ?></a>
 
 <?php if ($tokenValid !== true): ?>
     <h1 class="login-title">Link inválido</h1>

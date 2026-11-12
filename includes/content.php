@@ -24,11 +24,18 @@ function content_defaults(): array
         'map_query'        => 'Santa Rita do Passa Quatro SP',
         'delivery_heading' => 'Fazemos entrega para Santa Rita do<br class="desktop-break"> Passa Quatro e região',
         'delivery_cities'  => "Santa Rita do Passa Quatro\nSerrana\nSertãozinho\nFranca\nRibeirão Preto\nBomfim",
+        'orders_title'     => 'Como encomendar',
+        'orders_steps'     => "Escolha os produtos e as quantidades no carrinho.\nPreencha seu nome, telefone e endereço no checkout.\nEnvie o pedido pelo WhatsApp e combine a entrega com a gente.",
+        'delivery_info'    => 'Pedidos confirmados até quinta-feira. Entregamos aos sábados na região.',
+        'testimonials_title' => 'Quem já provou',
+        'testimonials_items' => "Maria S.|O queijo fresco é igual ao da roça, com gosto de leite fresquinho.|Santa Rita do Passa Quatro\nJoão P.|O doce de leite com amendoim acabou em um dia aqui em casa.|Ribeirão Preto\nAna C.|Atendimento carinhoso e entrega no prazo. Virou tradição na nossa mesa.|Franca",
+        'faq_title'        => 'Perguntas frequentes',
+        'faq_items'        => "Como faço um pedido?|Escolha os produtos no site, toque em Adicionar, preencha seus dados no carrinho e envie pelo WhatsApp. Confirmamos a disponibilidade e combinamos a entrega.\nQuais são as formas de pagamento?|Combinamos no WhatsApp: PIX, dinheiro ou cartão na entrega.\nVocês entregam na minha cidade?|Atendemos Santa Rita do Passa Quatro e região. Veja a lista de cidades na seção A fazenda.\nOs produtos são feitos na hora?|Trabalhamos com produção artesanal e pequenos lotes. O prazo é combinado no pedido.",
         'contact_title'    => 'Contatos',
         'instagram_user'   => '@artesanais.tia.ina',
         'instagram_url'    => 'https://www.instagram.com/artesanais.tia.ina/',
         'phone_display'    => '(19) 98987-3151',
-        'phone_url'        => 'tel:+5519989873151',
+        'phone_url'        => 'https://wa.me/5519989873151',
     ];
 }
 
@@ -69,6 +76,49 @@ function content_paragraphs(string $text): string
     return $html;
 }
 
+/**
+ * Linhas no formato "Pergunta|Resposta".
+ */
+function content_faq_items(string $text): array
+{
+    $items = [];
+    foreach (preg_split('/\r?\n/', $text) ?: [] as $line) {
+        $line = trim($line);
+        if ($line === '' || !str_contains($line, '|')) {
+            continue;
+        }
+        [$question, $answer] = array_map('trim', explode('|', $line, 2));
+        if ($question !== '' && $answer !== '') {
+            $items[] = ['question' => $question, 'answer' => $answer];
+        }
+    }
+    return $items;
+}
+
+/**
+ * Linhas no formato "Nome|Depoimento|Cidade".
+ */
+function content_testimonials(string $text): array
+{
+    $items = [];
+    foreach (preg_split('/\r?\n/', $text) ?: [] as $line) {
+        $line = trim($line);
+        if ($line === '') {
+            continue;
+        }
+        $parts = array_map('trim', explode('|', $line));
+        if (count($parts) < 2) {
+            continue;
+        }
+        $items[] = [
+            'name' => $parts[0],
+            'text' => $parts[1],
+            'city' => $parts[2] ?? '',
+        ];
+    }
+    return $items;
+}
+
 function content_map_embed(string $query): string
 {
     return 'https://maps.google.com/maps?q=' . rawurlencode($query) . '&z=11&output=embed';
@@ -81,8 +131,9 @@ function content_map_link(string $query): string
 
 function handle_content_save(): void
 {
-    $admin = require_admin();
+    require_admin();
     $allowed = array_keys(content_defaults());
+    $richText = ['hero_title', 'delivery_heading'];
     $files = $_FILES['content_upl'] ?? [];
     $saved = 0;
 
@@ -108,6 +159,9 @@ function handle_content_save(): void
             if ($uploaded !== null) {
                 $value = $uploaded;
             }
+        }
+        if (in_array($key, $richText, true)) {
+            $value = sanitize_html($value);
         }
         if ($value === '') {
             continue;

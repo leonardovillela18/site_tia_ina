@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /admin.php
+Disallow: /login.php
+Disallow: /logout.php
+Disallow: /forgot.php
+Disallow: /reset.php
+Disallow: /checkout.php
+Disallow: /data/
+Disallow: /tools/
+
+Sitemap: http://147.15.51.155/sitemap.php

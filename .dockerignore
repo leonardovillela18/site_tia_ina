@@ -1,0 +1,13 @@
+.git
+.gitignore
+.github
+data
+data-staging
+*.log
+deploy
+docker-compose.yml
+Dockerfile
+.dockerignore
+.env
+.env.*
+README.md

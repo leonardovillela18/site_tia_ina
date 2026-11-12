@@ -1,12 +1,8 @@
 <?php
 declare(strict_types=1);
-session_start();
-require __DIR__ . '/config.php';
-require __DIR__ . '/includes/db.php';
-require __DIR__ . '/includes/functions.php';
+require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/includes/mailer.php';
-
-migrate_and_seed();
+app_session_start();
 
 $sent = false;
 $error = '';
@@ -14,10 +10,16 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check($_POST['csrf_token'] ?? null);
     $email = trim($_POST['email'] ?? '');
+    $ip = client_ip();
 
-    if (!require_email($email)) {
+    if (rate_limit_exceeded('recover', $ip, RATE_LIMIT_RECOVER_MAX, RATE_LIMIT_RECOVER_WINDOW)) {
+        $minutes = rate_limit_wait_minutes('recover', $ip, RATE_LIMIT_RECOVER_MAX, RATE_LIMIT_RECOVER_WINDOW);
+        $error = 'Muitos pedidos de recuperação. Tente novamente em ' . $minutes . ' minuto(s).';
+    } elseif (!require_email($email)) {
         $error = 'Informe um e-mail válido.';
     } else {
+        rate_limit_hit('recover', $ip, $email);
+
         $stmt = db()->prepare('SELECT * FROM users WHERE lower(email) = lower(?)');
         $stmt->execute([$email]);
         $user = $stmt->fetch();
@@ -38,10 +40,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } catch (Throwable $exception) {
                 error_log('Recuperação de senha (' . $email . '): ' . $exception->getMessage());
             }
-            $sent = true;
-        } else {
-            $sent = true;
         }
+        $sent = true;
     }
 }
 ?>
@@ -49,13 +49,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
 <title>Recuperar senha | Tia Iná</title>
-<link rel="icon" href="img/logo.png"><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/admin.css">
+<link rel="icon" href="img/logo.png"><link rel="stylesheet" href="<?= e(asset('css/style.css')) ?>"><link rel="stylesheet" href="<?= e(asset('css/admin.css')) ?>">
 </head>
 <body class="login-page">
 <a class="back-link" href="index.php">← Voltar ao site</a>
 <main class="login-main">
-<a href="index.php" aria-label="Voltar ao início"><img class="login-logo" src="img/logo.png" alt="Produtos Artesanais Tia Iná" width="250" height="250"></a>
+<a href="index.php" aria-label="Voltar ao início"><?= render_picture('logo.png', 'Produtos Artesanais Tia Iná', ['class' => 'login-logo', 'widths' => [160, 320, 480], 'sizes' => '250px', 'loading' => 'eager']) ?></a>
 <h1 class="login-title">Recuperar senha</h1>
 
 <?php if ($sent): ?>
