@@ -1,6 +1,6 @@
 # Produtos Artesanais Tia Iná
 
-Front-end em PHP, HTML, CSS e JavaScript, usando as imagens de `img/`.
+Site com catálogo de produtos e um painel administrativo em PHP (SQLite) para gerenciar produtos e administradores.
 
 ## Executar
 
@@ -10,13 +10,46 @@ Com PHP instalado, abra um terminal nesta pasta e execute:
 php -S localhost:8888
 ```
 
-Acesse `http://localhost:8888`. Se o PHP não estiver no PATH, use `C:\xampp\php\php.exe -S localhost:8888`. Mantenha o terminal aberto enquanto utilizar o site. Não é necessário ativar o Apache para usar esse servidor PHP.
+Se o PHP não estiver no PATH, use `C:\xampp\php\php.exe -S localhost:8888`. Mantenha o terminal aberto. Acesse `http://localhost:8888`.
 
-- `index.php`: página principal contínua, com início, história, produtos, fazenda e contatos.
-- `login.php`: tela de login separada, acessível pelo ícone no cabeçalho.
-- `css/style.css`: estilos e adaptações para celular.
-- `js/main.js`: menu, indicação da seção atual, consulta visual de produtos e mensagens da tela de login.
+## Painel administrativo
 
-Não há autenticação, banco de dados, envio de formulários ou armazenamento de credenciais. Os botões dos produtos abrem uma janela de consulta com acesso aos contatos; não há carrinho ou checkout.
+Acesse `http://localhost:8888/login.php` (link "entrar" no cabeçalho do site).
 
-Os preços e contatos seguem os prints. O mapa apresenta a região de Santa Rita do Passa Quatro, pois não foi fornecido endereço exato da fazenda. O mapa e as fontes Google (Fraunces e Young Serif) precisam de internet; fontes serifadas locais são usadas como alternativa. As imagens permanecem locais. O banner usa a imagem fornecida, que difere da referência.
+- **Login padrão:** usuário `admin` / senha `admin123`
+- Ao entrar, **troque o e-mail e a senha** em **Admin → Minha conta**.
+
+### O que o painel permite
+
+- **Cadastrar, editar e excluir produtos** (nome, preço, descrição e imagem).
+  - Os preços são informados em reais (ex.: `20,50`) e convertidos para centavos no banco.
+  - As imagens disponíveis são as `.png`/`.jpg` que ficam em `img/`.
+- **Cadastrar e remover outros administradores** (o primeiro admin só pode ser criado por outro admin).
+- **Alterar o e-mail/senha da própria conta.**
+
+> Nenhuma pessoa pode criar conta no site — a criação é exclusiva do painel (um administrador cria os demais).
+
+### Esqueci minha senha
+
+Em `login.php`, clique em **Esqueci minha senha**, informe o e-mail cadastrado e um link de recuperação
+(válido por 30 minutos) será enviado por e-mail. Ele permite definir uma nova senha.
+
+**Configuração do e-mail (SMTP):** edite as constantes `SMTP_*` em `config.php` com as credenciais de um remetente
+(ex.: um app password do Gmail). Sem credenciais válidas, o envio falha e nada é enviado.
+
+## Estrutura
+
+- `index.php`: catálogo público (produtos vêm do banco).
+- `login.php`, `logout.php`: autenticação do administrador.
+- `forgot.php`, `reset.php`: recuperação de senha por e-mail.
+- `admin.php`: painel para gerenciar produtos e administradores.
+- `config.php`: configurações (banco, SMTP, contatos).
+- `includes/`: funções (`functions.php`), acesso ao banco (`db.php`) e envio de e-mail (`mailer.php`).
+- `css/admin.css`: estilos do painel e das telas de login/recuperação.
+- `data/site.sqlite`: banco SQLite (criado automaticamente). Não versionar (ver `.gitignore`).
+
+## Notas
+
+- Senhas são processadas com `password_hash`/`password_verify`; tokens de recuperação são guardados como hash.
+- Proteção CSRF em todos os formulários; sessões regeneradas ao logar.
+- As fontes Google (Fraunces e Young Serif) e o mapa precisam de internet; as imagens permanecem locais.
